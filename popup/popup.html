@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Name Spinner</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <section class="add-section">
+      <input type="text" id="name-input" placeholder="Add a name" />
+      <button type="button" id="add-btn">Add</button>
+    </section>
+    <section class="list-section">
+      <div class="list-section-header">
+        <h3>Names</h3>
+        <button type="button" id="import-btn" class="import-btn">Import names</button>
+      </div>
+      <div id="import-panel" class="import-panel hidden">
+        <p class="import-hint">Paste names below (one per line or comma-separated)</p>
+        <textarea id="import-textarea" class="import-textarea" rows="4" placeholder="Alice&#10;Bob&#10;Carol"></textarea>
+        <div class="import-actions">
+          <button type="button" id="import-replace-btn" class="import-replace-btn">Replace list</button>
+          <button type="button" id="import-cancel-btn" class="import-cancel-btn">Cancel</button>
+        </div>
+      </div>
+      <ul id="name-list"></ul>
+      <p id="empty-msg" class="empty-msg hidden">Add names above or import a list to get started.</p>
+    </section>
+    <section class="wheel-section">
+      <div class="slot-machine">
+        <div class="scroller-viewport">
+          <div class="slot-payline slot-payline--top" aria-hidden="true"></div>
+          <div class="slot-payline slot-payline--bottom" aria-hidden="true"></div>
+          <div id="scroller-strip" class="scroller-strip"></div>
+        </div>
+      </div>
+      <button type="button" id="spin-btn" class="rainbow-button" disabled>Spin</button>
+      <div id="result" class="result hidden"></div>
+      <div id="winner-history" class="winner-history hidden">
+        <h4 class="winner-history__title">Recent</h4>
+        <div id="winner-history-list" class="winner-history-list"></div>
+      </div>
+      <div id="stats" class="stats hidden">
+        <h4 class="stats__title">Times picked</h4>
+        <ul id="stats-list" class="stats-list"></ul>
+      </div>
+    </section>
+  </div>
+  <div id="confetti-container" class="confetti-container" aria-hidden="true"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
