@@ -29,12 +29,18 @@
       <p id="empty-msg" class="empty-msg hidden">Add names above or import a list to get started.</p>
     </section>
     <section class="wheel-section">
-      <div class="slot-machine">
-        <div class="scroller-viewport">
-          <div class="slot-payline slot-payline--top" aria-hidden="true"></div>
-          <div class="slot-payline slot-payline--bottom" aria-hidden="true"></div>
-          <div id="scroller-strip" class="scroller-strip"></div>
+      <div class="slot-machine-wrapper">
+        <div class="slot-machine">
+          <div class="scroller-viewport">
+            <div class="slot-payline slot-payline--top" aria-hidden="true"></div>
+            <div class="slot-payline slot-payline--bottom" aria-hidden="true"></div>
+            <div id="scroller-strip" class="scroller-strip"></div>
+          </div>
         </div>
+        <button type="button" id="lever-btn" class="slot-lever" aria-label="Pull lever to spin" disabled>
+          <span class="slot-lever__arm"></span>
+          <span class="slot-lever__handle"></span>
+        </button>
       </div>
       <button type="button" id="spin-btn" class="rainbow-button" disabled>Spin</button>
       <div id="result" class="result hidden"></div>

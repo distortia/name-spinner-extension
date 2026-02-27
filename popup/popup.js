@@ -16,6 +16,7 @@ const nameListEl = document.getElementById('name-list');
 const emptyMsg = document.getElementById('empty-msg');
 const scrollerStrip = document.getElementById('scroller-strip');
 const spinBtn = document.getElementById('spin-btn');
+const leverBtn = document.getElementById('lever-btn');
 const resultEl = document.getElementById('result');
 const winnerHistoryEl = document.getElementById('winner-history');
 const winnerHistoryListEl = document.getElementById('winner-history-list');
@@ -69,6 +70,7 @@ function renderList() {
   const empty = nameList.length === 0;
   emptyMsg.classList.toggle('hidden', !empty);
   spinBtn.disabled = empty;
+  leverBtn.disabled = empty;
   resultEl.classList.add('hidden');
 
   renderScroller(nameList);
@@ -200,6 +202,8 @@ function spin() {
   if (isSpinning || nameList.length === 0) return;
   isSpinning = true;
   spinBtn.disabled = true;
+  leverBtn.disabled = true;
+  leverBtn.classList.add('pulling');
   resultEl.classList.add('hidden');
 
   const n = nameList.length;
@@ -217,7 +221,9 @@ function spin() {
 
   setTimeout(() => {
     isSpinning = false;
-    spinBtn.disabled = false;
+    spinBtn.disabled = nameList.length === 0;
+    leverBtn.disabled = nameList.length === 0;
+    leverBtn.classList.remove('pulling');
     const winnerName = nameList[winnerIndex];
 
     winnerHistory = [winnerName, ...winnerHistory].slice(0, HISTORY_SIZE);
@@ -264,6 +270,7 @@ nameInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addName();
 });
 spinBtn.addEventListener('click', spin);
+leverBtn.addEventListener('click', spin);
 importBtn.addEventListener('click', openImportPanel);
 importReplaceBtn.addEventListener('click', applyImport);
 importCancelBtn.addEventListener('click', closeImportPanel);
