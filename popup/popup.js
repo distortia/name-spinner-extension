@@ -117,6 +117,7 @@ function triggerConfetti() {
     piece.className = 'confetti-piece';
     const angle = (Math.PI * 2 * i) / pieceCount + Math.random() * 0.5;
     const dist = 60 + Math.random() * 80;
+    
     const tx = Math.cos(angle) * dist * (Math.random() > 0.5 ? 1 : -1);
     const ty = Math.sin(angle) * dist + Math.random() * 40;
     piece.style.left = `${centerX}px`;
