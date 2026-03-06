@@ -15,33 +15,56 @@
     <section class="list-section">
       <div class="list-section-header">
         <h3>Names</h3>
-        <button type="button" id="import-btn" class="import-btn">Import names</button>
-      </div>
-      <div id="import-panel" class="import-panel hidden">
-        <p class="import-hint">Paste names below (one per line or comma-separated)</p>
-        <textarea id="import-textarea" class="import-textarea" rows="4" placeholder="Alice&#10;Bob&#10;Carol"></textarea>
-        <div class="import-actions">
-          <button type="button" id="import-replace-btn" class="import-replace-btn">Replace list</button>
-          <button type="button" id="import-cancel-btn" class="import-cancel-btn">Cancel</button>
+        <div class="list-section-header-actions">
+          <button type="button" id="list-collapse-btn" class="list-collapse-btn" aria-expanded="true" aria-controls="list-section-content" aria-label="Collapse names list">
+            <span class="list-collapse-icon" aria-hidden="true">▼</span>
+          </button>
+          <button type="button" id="import-btn" class="import-btn">
+            <svg class="import-btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Import names
+          </button>
         </div>
       </div>
-      <ul id="name-list"></ul>
-      <p id="empty-msg" class="empty-msg hidden">Add names above or import a list to get started.</p>
-    </section>
-    <section class="wheel-section">
-      <div class="slot-machine-wrapper">
-        <div class="slot-machine">
-          <div class="scroller-viewport">
-            <div class="slot-payline slot-payline--top" aria-hidden="true"></div>
-            <div class="slot-payline slot-payline--bottom" aria-hidden="true"></div>
-            <div id="scroller-strip" class="scroller-strip"></div>
+      <div id="list-section-content" class="list-section-content">
+        <div id="import-panel" class="import-panel hidden">
+          <p class="import-hint">Paste names below (one per line or comma-separated)</p>
+          <textarea id="import-textarea" class="import-textarea" rows="4" placeholder="Alice&#10;Bob&#10;Carol"></textarea>
+          <div class="import-actions">
+            <button type="button" id="import-replace-btn" class="import-replace-btn">Replace list</button>
+            <button type="button" id="import-cancel-btn" class="import-cancel-btn">Cancel</button>
           </div>
         </div>
-        <button type="button" id="lever-btn" class="slot-lever" aria-label="Pull lever to spin" disabled>
-          <span class="slot-lever__bar"></span>
-        </button>
+        <ul id="name-list"></ul>
+        <p id="empty-msg" class="empty-msg hidden">Add names above or import a list to get started.</p>
       </div>
-      <button type="button" id="spin-btn" class="rainbow-button" disabled>Spin</button>
+    </section>
+    <section class="wheel-section">
+      <div class="mode-tabs" role="tablist" aria-label="Pick mode">
+        <button type="button" id="tab-slot" class="mode-tab" role="tab" aria-selected="true" aria-controls="panel-slot" data-mode="slot">Slot</button>
+        <button type="button" id="tab-battle" class="mode-tab" role="tab" aria-selected="false" aria-controls="panel-battle" data-mode="battle">Battle</button>
+      </div>
+      <div id="panel-slot" class="tab-panel" role="tabpanel" aria-labelledby="tab-slot">
+        <div class="slot-machine-wrapper">
+          <div class="slot-machine">
+            <div class="scroller-viewport">
+              <div class="slot-payline slot-payline--top" aria-hidden="true"></div>
+              <div class="slot-payline slot-payline--bottom" aria-hidden="true"></div>
+              <div id="scroller-strip" class="scroller-strip"></div>
+            </div>
+          </div>
+          <button type="button" id="lever-btn" class="slot-lever" aria-label="Pull lever to spin" disabled>
+            <span class="slot-lever__bar"></span>
+          </button>
+        </div>
+        <button type="button" id="spin-btn" class="rainbow-button" disabled>Spin</button>
+      </div>
+      <div id="panel-battle" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-battle" aria-hidden="true">
+        <div class="battle-arena-wrapper">
+          <canvas id="battle-canvas" width="320" height="200" aria-label="Battle arena"></canvas>
+        </div>
+        <div id="battle-legend" class="battle-legend" aria-label="Players and their colors"></div>
+        <button type="button" id="battle-btn" class="rainbow-button battle-btn" disabled>Battle</button>
+      </div>
       <div id="result" class="result hidden"></div>
       <div id="winner-history" class="winner-history hidden">
         <h4 class="winner-history__title">Recent</h4>

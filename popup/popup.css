@@ -54,7 +54,58 @@ body {
   color: #555;
 }
 
+.list-section-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.list-collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #555;
+}
+
+.list-collapse-btn:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.list-collapse-icon {
+  display: inline-block;
+  font-size: 10px;
+  transition: transform 0.2s ease;
+}
+
+.list-section.collapsed .list-collapse-icon {
+  transform: rotate(-90deg);
+}
+
+.list-section-content {
+  max-height: 280px;
+  overflow: hidden;
+  transition: max-height 0.2s ease, opacity 0.2s ease;
+}
+
+.list-section.collapsed .list-section-content {
+  max-height: 0 !important;
+  margin-bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .import-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 4px 10px;
   font-size: 12px;
   background: #e8f0fe;
@@ -63,6 +114,10 @@ body {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
+}
+
+.import-btn-icon {
+  flex-shrink: 0;
 }
 
 .import-btn:hover {
@@ -178,6 +233,109 @@ body {
   align-items: center;
   padding: 12px 0;
   border-top: 1px solid #eee;
+}
+
+/* Mode tabs */
+.mode-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background: #f0f0f0;
+}
+
+.mode-tab {
+  flex: 1;
+  min-width: 80px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: #555;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mode-tab:hover {
+  background: #e8e8e8;
+  color: #333;
+}
+
+.mode-tab[aria-selected="true"] {
+  background: #1a73e8;
+  color: white;
+}
+
+.mode-tab:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+.tab-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.tab-panel.hidden {
+  display: none !important;
+}
+
+/* Battle arena */
+.battle-arena-wrapper {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 2px solid #333;
+  background: #1a1a1a;
+}
+
+#battle-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #252525;
+}
+
+.battle-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 12px;
+  margin-bottom: 12px;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: #333;
+}
+
+.battle-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.battle-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.battle-legend-name {
+  white-space: nowrap;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.battle-btn.rainbow-button {
+  margin-bottom: 0;
 }
 
 /* Slot machine + lever wrapper */
@@ -578,6 +736,16 @@ body {
     color: #b0b0b0;
   }
 
+  .list-collapse-btn {
+    border-color: #444;
+    color: #b0b0b0;
+  }
+
+  .list-collapse-btn:hover {
+    background: #3d3d3d;
+    color: #e3e3e3;
+  }
+
   .import-btn {
     background: #2d2d2d;
     color: #6ea8fe;
@@ -635,6 +803,29 @@ body {
 
   .wheel-section {
     border-top-color: #444;
+  }
+
+  .mode-tabs {
+    background: #2d2d2d;
+    border-color: #444;
+  }
+
+  .mode-tab {
+    color: #b0b0b0;
+  }
+
+  .mode-tab:hover {
+    background: #3d3d3d;
+    color: #e3e3e3;
+  }
+
+  .mode-tab[aria-selected="true"] {
+    background: #1a73e8;
+    color: white;
+  }
+
+  .battle-legend {
+    color: #e3e3e3;
   }
 
   .slot-machine {
