@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Name Spinner",
   "version": "1.0.0",
-  "description": "Spin a wheel to pick a name from your list.",
+  "description": "Pick a random name with Slot, Battle, or Duck Hunt.",
   "action": {
     "default_popup": "popup/popup.html",
     "default_title": "Name Spinner"

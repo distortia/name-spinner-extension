@@ -31,19 +31,27 @@ const importReplaceBtn = document.getElementById('import-replace-btn');
 const importCancelBtn = document.getElementById('import-cancel-btn');
 const tabSlot = document.getElementById('tab-slot');
 const tabBattle = document.getElementById('tab-battle');
+const tabHunt = document.getElementById('tab-hunt');
 const panelSlot = document.getElementById('panel-slot');
 const panelBattle = document.getElementById('panel-battle');
+const panelHunt = document.getElementById('panel-hunt');
 const battleCanvas = document.getElementById('battle-canvas');
 const battleBtn = document.getElementById('battle-btn');
 const battleLegend = document.getElementById('battle-legend');
+const huntCanvas = document.getElementById('hunt-canvas');
+const huntBtn = document.getElementById('hunt-btn');
 const listCollapseBtn = document.getElementById('list-collapse-btn');
 const listSection = document.querySelector('.list-section');
+const clearHistoryBtn = document.getElementById('clear-history-btn');
 
 let nameList = [];
 let winnerHistory = [];
 let pickCounts = {};
 let isSpinning = false;
 let isBattling = false;
+let isHunting = false;
+let huntAnimationId = null;
+let battleAnimationId = null;
 let currentMode = 'slot';
 
 function renderScroller(names) {
@@ -84,11 +92,14 @@ function renderList() {
   spinBtn.disabled = empty;
   leverBtn.disabled = empty;
   battleBtn.disabled = empty;
+  huntBtn.disabled = empty;
   resultEl.classList.add('hidden');
 
   renderScroller(nameList);
   renderHistory(winnerHistory);
   renderStats(pickCounts);
+  const hasHistoryOrStats = winnerHistory.length > 0 || Object.keys(pickCounts).some((k) => pickCounts[k] > 0);
+  clearHistoryBtn.classList.toggle('hidden', !hasHistoryOrStats);
 }
 
 function renderHistory(history) {
@@ -155,6 +166,7 @@ function declareWinner(winnerName) {
   chrome.storage.local.set(
     { [HISTORY_KEY]: winnerHistory, [STATS_KEY]: pickCounts },
     () => {
+      if (chrome.runtime.lastError) return;
       renderHistory(winnerHistory);
       renderStats(pickCounts);
     }
@@ -184,10 +196,13 @@ function declareWinner(winnerName) {
   resultEl.appendChild(nameSpan);
   resultEl.appendChild(addSparkles(4));
   resultEl.classList.remove('hidden');
+  resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  resultEl.setAttribute('tabindex', '-1');
+  resultEl.focus();
 }
 
 function removeName(index) {
-  if (isSpinning || isBattling) return;
+  if (isSpinning || isBattling || isHunting) return;
   nameList.splice(index, 1);
   saveAndRender();
 }
@@ -218,6 +233,7 @@ function openImportPanel() {
 function closeImportPanel() {
   importPanel.classList.add('hidden');
   importTextarea.value = '';
+  importBtn.focus();
 }
 
 function applyImport() {
@@ -225,23 +241,55 @@ function applyImport() {
   if (names.length === 0) return;
   nameList = names;
   chrome.storage.local.set({ [STORAGE_KEY]: nameList }, () => {
+    if (chrome.runtime.lastError) return;
     renderList();
     closeImportPanel();
   });
 }
 
 function saveAndRender() {
-  chrome.storage.local.set({ [STORAGE_KEY]: nameList }, () => renderList());
+  chrome.storage.local.set({ [STORAGE_KEY]: nameList }, () => {
+    if (chrome.runtime.lastError) return;
+    renderList();
+  });
+}
+
+function clearHistoryAndStats() {
+  winnerHistory = [];
+  pickCounts = {};
+  chrome.storage.local.set(
+    { [HISTORY_KEY]: winnerHistory, [STATS_KEY]: pickCounts },
+    () => {
+      if (chrome.runtime.lastError) return;
+      renderHistory(winnerHistory);
+      renderStats(pickCounts);
+      clearHistoryBtn.classList.add('hidden');
+    }
+  );
 }
 
 function setMode(mode) {
+  if (mode !== 'hunt' && isHunting && huntAnimationId != null) {
+    cancelAnimationFrame(huntAnimationId);
+    huntAnimationId = null;
+    isHunting = false;
+    huntBtn.disabled = nameList.length === 0;
+  }
+  if (mode !== 'battle' && isBattling && battleAnimationId != null) {
+    cancelAnimationFrame(battleAnimationId);
+    battleAnimationId = null;
+    isBattling = false;
+    battleBtn.disabled = nameList.length === 0;
+  }
   currentMode = mode;
-  const isSlot = mode === 'slot';
-  tabSlot.setAttribute('aria-selected', isSlot ? 'true' : 'false');
-  tabBattle.setAttribute('aria-selected', !isSlot ? 'true' : 'false');
-  panelSlot.classList.toggle('hidden', !isSlot);
-  panelBattle.classList.toggle('hidden', isSlot);
-  panelBattle.setAttribute('aria-hidden', isSlot ? 'true' : 'false');
+  tabSlot.setAttribute('aria-selected', mode === 'slot' ? 'true' : 'false');
+  tabBattle.setAttribute('aria-selected', mode === 'battle' ? 'true' : 'false');
+  tabHunt.setAttribute('aria-selected', mode === 'hunt' ? 'true' : 'false');
+  panelSlot.classList.toggle('hidden', mode !== 'slot');
+  panelBattle.classList.toggle('hidden', mode !== 'battle');
+  panelHunt.classList.toggle('hidden', mode !== 'hunt');
+  panelBattle.setAttribute('aria-hidden', mode !== 'battle');
+  panelHunt.setAttribute('aria-hidden', mode !== 'hunt');
 }
 
 const BATTLE_COLORS = ['#e53935', '#ff9800', '#ffeb3b', '#43a047', '#2196f3', '#9c27b0', '#00bcd4', '#795548'];
@@ -301,7 +349,7 @@ function runBattle() {
     battleLegend.appendChild(item);
   });
 
-  let animationId = null;
+  battleAnimationId = null;
 
   function eliminate(i) {
     tops[i].eliminated = true;
@@ -452,18 +500,295 @@ function runBattle() {
     draw();
     const remaining = tops.filter((t) => !t.eliminated);
     if (remaining.length <= 1) {
-      cancelAnimationFrame(animationId);
+      cancelAnimationFrame(battleAnimationId);
+      battleAnimationId = null;
       isBattling = false;
       battleBtn.disabled = nameList.length === 0;
       const winner = remaining.length === 1 ? remaining[0] : tops[Math.floor(Math.random() * tops.length)];
       declareWinner(winner.name);
       return;
     }
-    animationId = requestAnimationFrame(step);
+    battleAnimationId = requestAnimationFrame(step);
   }
 
   draw();
-  animationId = requestAnimationFrame(step);
+  battleAnimationId = requestAnimationFrame(step);
+}
+
+const HUNT_DURATION_MS = 10000;
+const HUNT_WIDTH = 320;
+const HUNT_HEIGHT = 200;
+const HUNT_DUCK_RADIUS = 16;
+const HUNT_DUCK_SPEED = 1.4;
+const HUNT_BOB_AMPLITUDE = 0.4;
+const HUNT_DUCK_COLORS = ['#8B4513', '#A0522D', '#CD853F', '#D2691E', '#BC8F8F', '#DEB887'];
+const AIM_LEAD_MS = 400;
+const HOLD_AFTER_HIT_MS = 220;
+const CROSSHAIR_WANDER_SPEED = 0.028;
+const CROSSHAIR_AIM_SPEED = 0.1;
+const CROSSHAIR_WANDER_RECHOOSE_MS = 900;
+
+function runHunt() {
+  if (isHunting || nameList.length === 0) return;
+  const n = nameList.length;
+  if (n === 1) {
+    declareWinner(nameList[0]);
+    return;
+  }
+  isHunting = true;
+  huntBtn.disabled = true;
+  resultEl.classList.add('hidden');
+
+  const ctx = huntCanvas.getContext('2d');
+  const W = HUNT_WIDTH;
+  const H = HUNT_HEIGHT;
+  const startTime = performance.now();
+  const intervalMs = HUNT_DURATION_MS / (n - 1);
+  let nextEliminationTime = intervalMs;
+
+  const ducks = nameList.map((name, i) => {
+    const row = Math.floor(i / 4);
+    const col = i % 4;
+    const spacingX = W / 5;
+    const spacingY = H / (Math.ceil(n / 4) + 1);
+    return {
+      name,
+      x: spacingX * (col + 1) + (Math.random() - 0.5) * 20,
+      y: spacingY * (row + 1) + (Math.random() - 0.5) * 15,
+      vx: (Math.random() > 0.5 ? 1 : -1) * (HUNT_DUCK_SPEED + Math.random() * 0.5),
+      vy: (Math.random() - 0.5) * HUNT_BOB_AMPLITUDE,
+      radius: HUNT_DUCK_RADIUS,
+      color: HUNT_DUCK_COLORS[i % HUNT_DUCK_COLORS.length],
+      eliminated: false,
+      bobPhase: Math.random() * Math.PI * 2,
+    };
+  });
+
+  let crosshairX = W / 2;
+  let crosshairY = H / 2;
+  let crosshairWanderTarget = { x: W * 0.3 + Math.random() * W * 0.4, y: H * 0.3 + Math.random() * H * 0.4 };
+  let crosshairWanderRechooseAt = performance.now() + CROSSHAIR_WANDER_RECHOOSE_MS;
+  let crosshairAimTarget = null;
+  let crosshairHoldUntil = 0;
+  let nextAimTime = nextEliminationTime - AIM_LEAD_MS;
+  huntAnimationId = null;
+
+  function drawCrosshair(x, y) {
+    const size = 14;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(-size, 0);
+    ctx.lineTo(size, 0);
+    ctx.moveTo(0, -size);
+    ctx.lineTo(0, size);
+    ctx.stroke();
+    ctx.strokeStyle = '#c00';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(0, 0, 4, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawSkyAndGrass() {
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+    skyGrad.addColorStop(0, '#87CEEB');
+    skyGrad.addColorStop(0.7, '#B0E0E6');
+    skyGrad.addColorStop(1, '#98D982');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#5a8c3a';
+    ctx.fillRect(0, H * 0.75, W, H * 0.25);
+    ctx.fillStyle = '#4a7c2a';
+    ctx.fillRect(0, H * 0.85, W, H * 0.15);
+  }
+
+  function drawFoliageAndTrees() {
+    const grassTop = H * 0.75;
+    const grassBottom = H;
+
+    function drawTree(x, scale) {
+      const trunkW = 8 * scale;
+      const trunkH = 45 * scale;
+      const trunkTop = grassBottom - trunkH;
+      ctx.fillStyle = '#5c4033';
+      ctx.fillRect(x - trunkW / 2, trunkTop, trunkW, trunkH);
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x - trunkW / 2, trunkTop, trunkW, trunkH);
+      const foliageY = trunkTop - 5;
+      const r = 28 * scale;
+      ctx.fillStyle = '#2d5a27';
+      ctx.beginPath();
+      ctx.arc(x, foliageY, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#3d7a35';
+      ctx.beginPath();
+      ctx.arc(x - r * 0.3, foliageY + r * 0.2, r * 0.7, 0, Math.PI * 2);
+      ctx.arc(x + r * 0.25, foliageY - r * 0.1, r * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(x, foliageY, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    function drawBush(x, y, w, h) {
+      ctx.fillStyle = '#3d6b2d';
+      ctx.beginPath();
+      ctx.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#4a7c3a';
+      ctx.beginPath();
+      ctx.ellipse(x - w * 0.2, y, w * 0.6, h * 0.8, 0, 0, Math.PI * 2);
+      ctx.ellipse(x + w * 0.25, y - h * 0.1, w * 0.5, h * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    drawTree(45, 1);
+    drawTree(275, 0.9);
+    drawTree(155, 0.65);
+    drawBush(95, grassTop + 22, 32, 18);
+    drawBush(225, grassTop + 28, 28, 16);
+    drawBush(300, grassBottom - 12, 22, 12);
+    drawBush(18, grassBottom - 15, 20, 11);
+  }
+
+  function drawDuck(d) {
+    if (d.eliminated) return;
+    ctx.save();
+    ctx.translate(d.x, d.y);
+    if (d.vx < 0) ctx.scale(-1, 1);
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.beginPath();
+    ctx.ellipse(2, 4, d.radius * 0.8, d.radius * 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = d.color;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, d.radius * 0.9, d.radius * 0.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(d.radius * 0.6, -d.radius * 0.2, d.radius * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#FFA500';
+    ctx.beginPath();
+    ctx.moveTo(d.radius * 0.85, -d.radius * 0.15);
+    ctx.lineTo(d.radius * 1.35, -d.radius * 0.1);
+    ctx.lineTo(d.radius * 0.9, d.radius * 0.05);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.stroke();
+    if (d.vx < 0) ctx.scale(-1, 1);
+    const label = d.name.length > 8 ? d.name.slice(0, 7) + '\u2026' : d.name;
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillText(label, 0, d.radius * 0.75);
+    ctx.restore();
+  }
+
+  function step() {
+    const now = performance.now();
+    const elapsed = now - startTime;
+    const remaining = ducks.filter((d) => !d.eliminated);
+
+    if (elapsed >= nextAimTime && !crosshairAimTarget && crosshairHoldUntil < now && remaining.length > 1) {
+      crosshairAimTarget = remaining[Math.floor(Math.random() * remaining.length)];
+    }
+    if (elapsed >= nextEliminationTime && crosshairAimTarget) {
+      const victim = crosshairAimTarget;
+      victim.eliminated = true;
+      crosshairX = victim.x;
+      crosshairY = victim.y;
+      crosshairHoldUntil = now + HOLD_AFTER_HIT_MS;
+      crosshairAimTarget = null;
+      crosshairWanderTarget = {
+        x: 20 + Math.random() * (W - 40),
+        y: 20 + Math.random() * (H - 40),
+      };
+      crosshairWanderRechooseAt = now + CROSSHAIR_WANDER_RECHOOSE_MS;
+      nextEliminationTime += intervalMs;
+      nextAimTime = nextEliminationTime - AIM_LEAD_MS;
+    }
+
+    if (crosshairHoldUntil < now) {
+      if (crosshairAimTarget) {
+        crosshairX += (crosshairAimTarget.x - crosshairX) * CROSSHAIR_AIM_SPEED;
+        crosshairY += (crosshairAimTarget.y - crosshairY) * CROSSHAIR_AIM_SPEED;
+      } else {
+        crosshairX += (crosshairWanderTarget.x - crosshairX) * CROSSHAIR_WANDER_SPEED;
+        crosshairY += (crosshairWanderTarget.y - crosshairY) * CROSSHAIR_WANDER_SPEED;
+        if (now >= crosshairWanderRechooseAt) {
+          crosshairWanderTarget = {
+            x: 20 + Math.random() * (W - 40),
+            y: 20 + Math.random() * (H - 40),
+          };
+          crosshairWanderRechooseAt = now + CROSSHAIR_WANDER_RECHOOSE_MS;
+        }
+      }
+    }
+
+    ducks.forEach((d) => {
+      if (d.eliminated) return;
+      d.x += d.vx;
+      d.y += d.vy;
+      d.bobPhase += 0.05;
+      d.vy = Math.sin(d.bobPhase) * HUNT_BOB_AMPLITUDE;
+      if (d.x - d.radius < 0) {
+        d.x = d.radius;
+        d.vx = -d.vx;
+      }
+      if (d.x + d.radius > W) {
+        d.x = W - d.radius;
+        d.vx = -d.vx;
+      }
+      if (d.y - d.radius < 0) {
+        d.y = d.radius;
+        d.vy = -d.vy;
+      }
+      if (d.y + d.radius > H) {
+        d.y = H - d.radius;
+        d.vy = -d.vy;
+      }
+    });
+
+    drawSkyAndGrass();
+    drawFoliageAndTrees();
+    ducks.forEach(drawDuck);
+    drawCrosshair(crosshairX, crosshairY);
+
+    if (remaining.length <= 1) {
+      cancelAnimationFrame(huntAnimationId);
+      huntAnimationId = null;
+      isHunting = false;
+      huntBtn.disabled = nameList.length === 0;
+      const winner = remaining.length === 1 ? remaining[0] : ducks[Math.floor(Math.random() * ducks.length)];
+      declareWinner(winner.name);
+      return;
+    }
+    huntAnimationId = requestAnimationFrame(step);
+  }
+
+  drawSkyAndGrass();
+  drawFoliageAndTrees();
+  ducks.forEach(drawDuck);
+  drawCrosshair(crosshairX, crosshairY);
+  huntAnimationId = requestAnimationFrame(step);
 }
 
 function applyListCollapsed(collapsed) {
@@ -480,12 +805,16 @@ function applyListCollapsed(collapsed) {
 
 function loadAndRender() {
   chrome.storage.local.get([STORAGE_KEY, HISTORY_KEY, STATS_KEY, LIST_COLLAPSED_KEY], (data) => {
+    if (chrome.runtime.lastError) return;
     winnerHistory = Array.isArray(data[HISTORY_KEY]) ? data[HISTORY_KEY] : [];
     pickCounts = data[STATS_KEY] && typeof data[STATS_KEY] === 'object' ? data[STATS_KEY] : {};
     const stored = data[STORAGE_KEY];
     if (!stored || !Array.isArray(stored) || stored.length === 0) {
       nameList = [...DEFAULT_NAMES];
-      chrome.storage.local.set({ [STORAGE_KEY]: nameList }, () => renderList());
+      chrome.storage.local.set({ [STORAGE_KEY]: nameList }, () => {
+        if (chrome.runtime.lastError) return;
+        renderList();
+      });
     } else {
       nameList = stored;
       renderList();
@@ -531,17 +860,25 @@ nameInput.addEventListener('keydown', (e) => {
 });
 tabSlot.addEventListener('click', () => setMode('slot'));
 tabBattle.addEventListener('click', () => setMode('battle'));
+tabHunt.addEventListener('click', () => setMode('hunt'));
 spinBtn.addEventListener('click', spin);
 leverBtn.addEventListener('click', spin);
 battleBtn.addEventListener('click', runBattle);
+huntBtn.addEventListener('click', runHunt);
 listCollapseBtn.addEventListener('click', () => {
   const isCollapsed = listSection.classList.toggle('collapsed');
   listCollapseBtn.setAttribute('aria-expanded', !isCollapsed);
   listCollapseBtn.setAttribute('aria-label', isCollapsed ? 'Expand names list' : 'Collapse names list');
-  chrome.storage.local.set({ [LIST_COLLAPSED_KEY]: isCollapsed });
+  chrome.storage.local.set({ [LIST_COLLAPSED_KEY]: isCollapsed }, () => {
+    if (chrome.runtime.lastError) return;
+  });
 });
 importBtn.addEventListener('click', openImportPanel);
 importReplaceBtn.addEventListener('click', applyImport);
 importCancelBtn.addEventListener('click', closeImportPanel);
+importTextarea.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeImportPanel();
+});
+clearHistoryBtn.addEventListener('click', clearHistoryAndStats);
 
 loadAndRender();

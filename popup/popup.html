@@ -42,6 +42,7 @@
       <div class="mode-tabs" role="tablist" aria-label="Pick mode">
         <button type="button" id="tab-slot" class="mode-tab" role="tab" aria-selected="true" aria-controls="panel-slot" data-mode="slot">Slot</button>
         <button type="button" id="tab-battle" class="mode-tab" role="tab" aria-selected="false" aria-controls="panel-battle" data-mode="battle">Battle</button>
+        <button type="button" id="tab-hunt" class="mode-tab" role="tab" aria-selected="false" aria-controls="panel-hunt" data-mode="hunt">Duck Hunt</button>
       </div>
       <div id="panel-slot" class="tab-panel" role="tabpanel" aria-labelledby="tab-slot">
         <div class="slot-machine-wrapper">
@@ -65,7 +66,14 @@
         <div id="battle-legend" class="battle-legend" aria-label="Players and their colors"></div>
         <button type="button" id="battle-btn" class="rainbow-button battle-btn" disabled>Battle</button>
       </div>
-      <div id="result" class="result hidden"></div>
+      <div id="panel-hunt" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-hunt" aria-hidden="true">
+        <div class="hunt-arena-wrapper">
+          <canvas id="hunt-canvas" width="320" height="200" aria-label="Duck Hunt arena"></canvas>
+        </div>
+        <p class="hunt-instruction">Watch — last duck wins in ~10s.</p>
+        <button type="button" id="hunt-btn" class="rainbow-button hunt-btn" disabled>Hunt</button>
+      </div>
+      <div id="result" class="result hidden" aria-live="polite" aria-atomic="true"></div>
       <div id="winner-history" class="winner-history hidden">
         <h4 class="winner-history__title">Recent</h4>
         <div id="winner-history-list" class="winner-history-list"></div>
@@ -74,6 +82,7 @@
         <h4 class="stats__title">Times picked</h4>
         <ul id="stats-list" class="stats-list"></ul>
       </div>
+      <button type="button" id="clear-history-btn" class="clear-history-btn hidden" aria-label="Clear history and stats">Clear history & stats</button>
     </section>
   </div>
   <div id="confetti-container" class="confetti-container" aria-hidden="true"></div>
