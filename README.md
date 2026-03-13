@@ -1,6 +1,6 @@
 # Name Spinner
 
-A Chrome extension that picks a random name from your list. Choose **Slot**, **Battle**, or **Duck Hunt**—great for standup, lunch duty, or picking who goes first.
+A Chrome extension that picks a random name from your list. Choose **Slot**, **Battle**, **Duck Hunt**, or **Plinko**—great for standup, lunch duty, or picking who goes first.
 
 ## Features
 
@@ -9,6 +9,7 @@ A Chrome extension that picks a random name from your list. Choose **Slot**, **B
 - **Slot** – Spin the reel and watch it land on a random name
 - **Battle** – Name circles bounce in an arena; the last one in bounds wins
 - **Duck Hunt** – Ducks fly across the scene; the last duck standing wins (automated, ~10 seconds)
+- **Plinko** – Drop a ball through pegs; it lands in a name slot to pick the winner
 - **History** – See the last 5 winners
 - **Stats** – See how many times each person has been picked
 - **Confetti** – Celebration when a winner is revealed
@@ -39,7 +40,7 @@ A Chrome extension that picks a random name from your list. Choose **Slot**, **B
    - Click **Replace list**.
 
 2. **Pick a winner**
-   - Choose **Slot**, **Battle**, or **Duck Hunt**.
-   - Slot: click **Spin** (or pull the lever). Battle: click **Battle**. Duck Hunt: click **Hunt** and watch.
+   - Choose **Slot**, **Battle**, **Duck Hunt**, or **Plinko**.
+   - Slot: click **Spin** (or pull the lever). Battle: click **Battle**. Duck Hunt: click **Hunt** and watch. Plinko: click **Drop** and watch the ball fall.
 
 No names are stored in the repo—everyone imports their own list.

@@ -32,14 +32,18 @@ const importCancelBtn = document.getElementById('import-cancel-btn');
 const tabSlot = document.getElementById('tab-slot');
 const tabBattle = document.getElementById('tab-battle');
 const tabHunt = document.getElementById('tab-hunt');
+const tabPlinko = document.getElementById('tab-plinko');
 const panelSlot = document.getElementById('panel-slot');
 const panelBattle = document.getElementById('panel-battle');
 const panelHunt = document.getElementById('panel-hunt');
+const panelPlinko = document.getElementById('panel-plinko');
 const battleCanvas = document.getElementById('battle-canvas');
 const battleBtn = document.getElementById('battle-btn');
 const battleLegend = document.getElementById('battle-legend');
 const huntCanvas = document.getElementById('hunt-canvas');
 const huntBtn = document.getElementById('hunt-btn');
+const plinkoCanvas = document.getElementById('plinko-canvas');
+const plinkoBtn = document.getElementById('plinko-btn');
 const listCollapseBtn = document.getElementById('list-collapse-btn');
 const listSection = document.querySelector('.list-section');
 const clearHistoryBtn = document.getElementById('clear-history-btn');
@@ -50,8 +54,10 @@ let pickCounts = {};
 let isSpinning = false;
 let isBattling = false;
 let isHunting = false;
+let isPlinkoRunning = false;
 let huntAnimationId = null;
 let battleAnimationId = null;
+let plinkoAnimationId = null;
 let currentMode = 'slot';
 
 function renderScroller(names) {
@@ -93,6 +99,7 @@ function renderList() {
   leverBtn.disabled = empty;
   battleBtn.disabled = empty;
   huntBtn.disabled = empty;
+  plinkoBtn.disabled = empty;
   resultEl.classList.add('hidden');
 
   renderScroller(nameList);
@@ -202,7 +209,7 @@ function declareWinner(winnerName) {
 }
 
 function removeName(index) {
-  if (isSpinning || isBattling || isHunting) return;
+  if (isSpinning || isBattling || isHunting || isPlinkoRunning) return;
   nameList.splice(index, 1);
   saveAndRender();
 }
@@ -281,15 +288,24 @@ function setMode(mode) {
     isBattling = false;
     battleBtn.disabled = nameList.length === 0;
   }
+  if (mode !== 'plinko' && isPlinkoRunning && plinkoAnimationId != null) {
+    cancelAnimationFrame(plinkoAnimationId);
+    plinkoAnimationId = null;
+    isPlinkoRunning = false;
+    plinkoBtn.disabled = nameList.length === 0;
+  }
   currentMode = mode;
   tabSlot.setAttribute('aria-selected', mode === 'slot' ? 'true' : 'false');
   tabBattle.setAttribute('aria-selected', mode === 'battle' ? 'true' : 'false');
   tabHunt.setAttribute('aria-selected', mode === 'hunt' ? 'true' : 'false');
+  tabPlinko.setAttribute('aria-selected', mode === 'plinko' ? 'true' : 'false');
   panelSlot.classList.toggle('hidden', mode !== 'slot');
   panelBattle.classList.toggle('hidden', mode !== 'battle');
   panelHunt.classList.toggle('hidden', mode !== 'hunt');
+  panelPlinko.classList.toggle('hidden', mode !== 'plinko');
   panelBattle.setAttribute('aria-hidden', mode !== 'battle');
   panelHunt.setAttribute('aria-hidden', mode !== 'hunt');
+  panelPlinko.setAttribute('aria-hidden', mode !== 'plinko');
 }
 
 const BATTLE_COLORS = ['#e53935', '#ff9800', '#ffeb3b', '#43a047', '#2196f3', '#9c27b0', '#00bcd4', '#795548'];
@@ -791,6 +807,214 @@ function runHunt() {
   huntAnimationId = requestAnimationFrame(step);
 }
 
+const PLINKO_WIDTH = 320;
+const PLINKO_HEIGHT = 280;
+const PLINKO_PEG_TOP = 18;
+const PLINKO_NUM_PEG_ROWS = 8;
+const PLINKO_PEG_RADIUS = 5;
+const PLINKO_BALL_RADIUS = 7;
+const PLINKO_BUCKET_TOP = 210;
+const PLINKO_BUCKET_HEIGHT = 70;
+const PLINKO_DROP_MS = 400;
+const PLINKO_GRAVITY = 0.11;
+const PLINKO_BOUNCE_DAMP = 0.64;
+const PLINKO_PEG_KICK = 1.7;
+const PLINKO_WALL_BOUNCE = 0.4;
+const PLINKO_PEG_COLOR = '#ffd700';
+const PLINKO_BALL_COLOR = '#e53935';
+const PLINKO_BUCKET_COLORS = ['#1a73e8', '#43a047', '#ff9800', '#9c27b0', '#00bcd4', '#795548', '#e91e63', '#3f51b5'];
+
+function runPlinko() {
+  if (isPlinkoRunning || nameList.length === 0) return;
+  const n = nameList.length;
+  if (n === 1) {
+    declareWinner(nameList[0]);
+    return;
+  }
+  isPlinkoRunning = true;
+  plinkoBtn.disabled = true;
+  resultEl.classList.add('hidden');
+
+  const bucketNames = [...nameList];
+  for (let i = bucketNames.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [bucketNames[i], bucketNames[j]] = [bucketNames[j], bucketNames[i]];
+  }
+
+  const ctx = plinkoCanvas.getContext('2d');
+  const W = PLINKO_WIDTH;
+  const H = PLINKO_HEIGHT;
+  const numPegRows = PLINKO_NUM_PEG_ROWS;
+  const pegRowSpacing = (PLINKO_BUCKET_TOP - 22 - PLINKO_PEG_TOP) / (numPegRows - 1);
+
+  const pegJitterX = 14;
+  const pegJitterY = 4;
+  const pegPositions = [];
+  for (let r = 0; r < numPegRows; r++) {
+    const rowWidth = W / (r + 1);
+    for (let c = 0; c <= r; c++) {
+      const baseX = (c + 0.5) * rowWidth;
+      const baseY = PLINKO_PEG_TOP + r * pegRowSpacing;
+      const x = Math.max(PLINKO_PEG_RADIUS + 2, Math.min(W - PLINKO_PEG_RADIUS - 2, baseX + (Math.random() - 0.5) * 2 * pegJitterX));
+      const y = baseY + (Math.random() - 0.5) * 2 * pegJitterY;
+      pegPositions.push({ x, y });
+    }
+  }
+
+  const lastPegY = PLINKO_PEG_TOP + (numPegRows - 1) * pegRowSpacing + pegJitterY;
+  const bucketW = W / n;
+  const bucketCenterY = PLINKO_BUCKET_TOP + PLINKO_BUCKET_HEIGHT / 2;
+
+  let ball = {
+    x: W / 2,
+    y: PLINKO_BALL_RADIUS + 2,
+    vx: 0,
+    vy: 0,
+  };
+  let lastHitPeg = null;
+  let phase = 'bouncing';
+  let dropStartTime = 0;
+  let dropStartX = 0;
+  let dropStartY = 0;
+  let winnerBucketIndex = 0;
+  plinkoAnimationId = null;
+
+  function drawBoard() {
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, W, H);
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#16213e');
+    grad.addColorStop(0.7, '#1a1a2e');
+    grad.addColorStop(1, '#0f0f1a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    pegPositions.forEach((p) => {
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath();
+      ctx.arc(p.x + 1, p.y + 1, PLINKO_PEG_RADIUS + 1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = PLINKO_PEG_COLOR;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, PLINKO_PEG_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+
+    const bucketW = W / n;
+    for (let s = 0; s < n; s++) {
+      const left = s * bucketW;
+      const color = PLINKO_BUCKET_COLORS[s % PLINKO_BUCKET_COLORS.length];
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fillRect(left + 2, PLINKO_BUCKET_TOP + 2, bucketW - 2, PLINKO_BUCKET_HEIGHT - 2);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.85;
+      ctx.fillRect(left, PLINKO_BUCKET_TOP, bucketW - 2, PLINKO_BUCKET_HEIGHT - 2);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(left, PLINKO_BUCKET_TOP, bucketW - 2, PLINKO_BUCKET_HEIGHT - 2);
+      const label = bucketNames[s].length > 8 ? bucketNames[s].slice(0, 7) + '\u2026' : bucketNames[s];
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(label, left + bucketW / 2 - 1, PLINKO_BUCKET_TOP + PLINKO_BUCKET_HEIGHT / 2 - 1);
+    }
+  }
+
+  function drawBall(ballX, ballY) {
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath();
+    ctx.arc(ballX + 2, ballY + 2, PLINKO_BALL_RADIUS + 1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = PLINKO_BALL_COLOR;
+    ctx.beginPath();
+    ctx.arc(ballX, ballY, PLINKO_BALL_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  function step() {
+    if (phase === 'dropping') {
+      const elapsed = performance.now() - dropStartTime;
+      const t = Math.min(1, elapsed / PLINKO_DROP_MS);
+      const ease = 1 - (1 - t) * (1 - t);
+      const ballX = dropStartX + (bucketW * (winnerBucketIndex + 0.5) - dropStartX) * ease;
+      const ballY = dropStartY + (bucketCenterY - dropStartY) * ease;
+      drawBoard();
+      drawBall(ballX, ballY);
+      if (t >= 1) {
+        cancelAnimationFrame(plinkoAnimationId);
+        plinkoAnimationId = null;
+        isPlinkoRunning = false;
+        plinkoBtn.disabled = nameList.length === 0;
+        declareWinner(bucketNames[winnerBucketIndex]);
+        return;
+      }
+      plinkoAnimationId = requestAnimationFrame(step);
+      return;
+    }
+
+    ball.vy += PLINKO_GRAVITY;
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    const totalR = PLINKO_PEG_RADIUS + PLINKO_BALL_RADIUS;
+    pegPositions.forEach((peg, idx) => {
+      if (idx === lastHitPeg) return;
+      const dx = ball.x - peg.x;
+      const dy = ball.y - peg.y;
+      const d = Math.hypot(dx, dy) || 1e-6;
+      if (d < totalR) {
+        lastHitPeg = idx;
+        const nx = dx / d;
+        const ny = dy / d;
+        ball.x = peg.x + nx * totalR;
+        ball.y = peg.y + ny * totalR;
+        const vn = ball.vx * nx + ball.vy * ny;
+        ball.vx = (ball.vx - 2 * vn * nx) * PLINKO_BOUNCE_DAMP;
+        ball.vy = (ball.vy - 2 * vn * ny) * PLINKO_BOUNCE_DAMP;
+        const kick = (Math.random() > 0.5 ? 1 : -1) * PLINKO_PEG_KICK * (0.6 + Math.random() * 0.9);
+        ball.vx += kick;
+      }
+    });
+    if (lastHitPeg !== null) {
+      const peg = pegPositions[lastHitPeg];
+      if (Math.hypot(ball.x - peg.x, ball.y - peg.y) > totalR + 2) lastHitPeg = null;
+    }
+
+    if (ball.x - PLINKO_BALL_RADIUS < 0) {
+      ball.x = PLINKO_BALL_RADIUS;
+      ball.vx = -ball.vx * PLINKO_WALL_BOUNCE;
+    }
+    if (ball.x + PLINKO_BALL_RADIUS > W) {
+      ball.x = W - PLINKO_BALL_RADIUS;
+      ball.vx = -ball.vx * PLINKO_WALL_BOUNCE;
+    }
+
+    if (ball.y > lastPegY + 12) {
+      winnerBucketIndex = Math.max(0, Math.min(n - 1, Math.floor(ball.x / bucketW)));
+      phase = 'dropping';
+      dropStartTime = performance.now();
+      dropStartX = ball.x;
+      dropStartY = ball.y;
+    }
+
+    drawBoard();
+    drawBall(ball.x, ball.y);
+    plinkoAnimationId = requestAnimationFrame(step);
+  }
+
+  drawBoard();
+  drawBall(ball.x, ball.y);
+  plinkoAnimationId = requestAnimationFrame(step);
+}
+
 function applyListCollapsed(collapsed) {
   if (collapsed) {
     listSection.classList.add('collapsed');
@@ -861,10 +1085,12 @@ nameInput.addEventListener('keydown', (e) => {
 tabSlot.addEventListener('click', () => setMode('slot'));
 tabBattle.addEventListener('click', () => setMode('battle'));
 tabHunt.addEventListener('click', () => setMode('hunt'));
+tabPlinko.addEventListener('click', () => setMode('plinko'));
 spinBtn.addEventListener('click', spin);
 leverBtn.addEventListener('click', spin);
 battleBtn.addEventListener('click', runBattle);
 huntBtn.addEventListener('click', runHunt);
+plinkoBtn.addEventListener('click', runPlinko);
 listCollapseBtn.addEventListener('click', () => {
   const isCollapsed = listSection.classList.toggle('collapsed');
   listCollapseBtn.setAttribute('aria-expanded', !isCollapsed);

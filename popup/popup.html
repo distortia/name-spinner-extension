@@ -43,6 +43,7 @@
         <button type="button" id="tab-slot" class="mode-tab" role="tab" aria-selected="true" aria-controls="panel-slot" data-mode="slot">Slot</button>
         <button type="button" id="tab-battle" class="mode-tab" role="tab" aria-selected="false" aria-controls="panel-battle" data-mode="battle">Battle</button>
         <button type="button" id="tab-hunt" class="mode-tab" role="tab" aria-selected="false" aria-controls="panel-hunt" data-mode="hunt">Duck Hunt</button>
+        <button type="button" id="tab-plinko" class="mode-tab" role="tab" aria-selected="false" aria-controls="panel-plinko" data-mode="plinko">Plinko</button>
       </div>
       <div id="panel-slot" class="tab-panel" role="tabpanel" aria-labelledby="tab-slot">
         <div class="slot-machine-wrapper">
@@ -72,6 +73,13 @@
         </div>
         <p class="hunt-instruction">Watch — last duck wins in ~10s.</p>
         <button type="button" id="hunt-btn" class="rainbow-button hunt-btn" disabled>Hunt</button>
+      </div>
+      <div id="panel-plinko" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-plinko" aria-hidden="true">
+        <div class="plinko-arena-wrapper">
+          <canvas id="plinko-canvas" width="320" height="280" aria-label="Plinko board"></canvas>
+        </div>
+        <p class="plinko-instruction">Drop the ball — it bounces through pegs into a name slot.</p>
+        <button type="button" id="plinko-btn" class="rainbow-button plinko-btn" disabled>Drop</button>
       </div>
       <div id="result" class="result hidden" aria-live="polite" aria-atomic="true"></div>
       <div id="winner-history" class="winner-history hidden">

@@ -366,6 +366,34 @@ body {
   margin-bottom: 0;
 }
 
+/* Plinko arena */
+.plinko-arena-wrapper {
+  margin-bottom: 8px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 2px solid #333;
+  background: #1a1a1a;
+}
+
+#plinko-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #252525;
+}
+
+.plinko-instruction {
+  font-size: 12px;
+  color: #666;
+  margin: 0 0 10px;
+  text-align: center;
+}
+
+.plinko-btn.rainbow-button {
+  margin-bottom: 0;
+}
+
 /* Slot machine + lever wrapper */
 .slot-machine-wrapper {
   display: flex;
@@ -526,7 +554,10 @@ body {
   border-bottom: none;
 }
 
-#spin-btn.rainbow-button {
+#spin-btn.rainbow-button,
+#battle-btn.rainbow-button,
+#hunt-btn.rainbow-button,
+#plinko-btn.rainbow-button {
   padding: 15px 30px;
   border: none;
   border-radius: 8px;
@@ -555,7 +586,10 @@ body {
   }
 }
 
-#spin-btn.rainbow-button:disabled {
+#spin-btn.rainbow-button:disabled,
+#battle-btn.rainbow-button:disabled,
+#hunt-btn.rainbow-button:disabled,
+#plinko-btn.rainbow-button:disabled {
   animation: none;
   background: #ccc;
   background-size: auto;
@@ -906,7 +940,10 @@ body {
     border-bottom-color: rgba(255, 255, 255, 0.04);
   }
 
-  #spin-btn.rainbow-button:disabled {
+  #spin-btn.rainbow-button:disabled,
+  #battle-btn.rainbow-button:disabled,
+  #hunt-btn.rainbow-button:disabled,
+  #plinko-btn.rainbow-button:disabled {
     background: #555;
   }
 
